@@ -1,0 +1,65 @@
+USE CloudSolutionsDB;
+GO
+
+-- Запрос 1: Вывести все курсы длительностью более 1 месяца (поиск по тексту)
+SELECT Title, Duration, TargetAudience 
+FROM Courses 
+WHERE Duration LIKE '%месяц%' AND Duration != '1 месяц';
+
+-- Запрос 2: Получить список всех студентов (RoleID = 2), отсортированных по дате регистрации
+SELECT FullName, Email, CreatedAt 
+FROM Users 
+WHERE RoleID = 2 
+ORDER BY CreatedAt DESC;
+
+-- Запрос 3: Вывести все уроки конкретного курса (например, 'Введение в AWS') с помощью JOIN
+SELECT c.Title AS CourseName, l.OrderNumber, l.Title AS LessonName 
+FROM Lessons l
+JOIN Courses c ON l.CourseID = c.CourseID
+WHERE c.Title = 'Введение в AWS'
+ORDER BY l.OrderNumber;
+
+-- Запрос 4: Подсчитать количество уроков в каждом курсе
+SELECT c.Title AS CourseName, COUNT(l.LessonID) AS LessonsCount
+FROM Courses c
+LEFT JOIN Lessons l ON c.CourseID = l.CourseID
+GROUP BY c.Title;
+
+-- Запрос 5: Найти курсы, на которые записано более 2 студентов (использование HAVING)
+SELECT c.Title, COUNT(e.UserID) AS TotalStudents
+FROM Courses c
+JOIN Enrollments e ON c.CourseID = e.CourseID
+WHERE e.Status = 'Active'
+GROUP BY c.Title
+HAVING COUNT(e.UserID) > 2;
+
+-- Запрос 6: Получить историю комментариев пользователя по его Email
+SELECT u.FullName, c.Title AS Course, l.Title AS Lesson, com.CommentText, com.CreatedAt
+FROM Comments com
+JOIN Users u ON com.UserID = u.UserID
+JOIN Lessons l ON com.LessonID = l.LessonID
+JOIN Courses c ON l.CourseID = c.CourseID
+WHERE u.Email = 'petr@mail.ru';
+
+-- Запрос 7: Вывести список всех необработанных (новых) заявок в техподдержку
+SELECT Name, Email, MessageText, SubmittedAt 
+FROM ContactRequests 
+WHERE IsResolved = 0 
+ORDER BY SubmittedAt ASC;
+
+-- Запрос 8: Найти пользователей, которые зарегистрировались, но еще не записались ни на один курс (Вложенный запрос)
+SELECT FullName, Email 
+FROM Users 
+WHERE UserID NOT IN (SELECT UserID FROM Enrollments) AND RoleID = 2;
+
+-- Запрос 9: Вывести статистику по статусам записей на курсы (сколько активных, завершенных, брошенных)
+SELECT Status, COUNT(EnrollmentID) AS CountOfEnrollments
+FROM Enrollments
+GROUP BY Status;
+
+-- Запрос 10: Получить топ-5 последних оставленных комментариев на платформе
+SELECT TOP 5 u.FullName, l.Title AS LessonName, com.CommentText, com.CreatedAt
+FROM Comments com
+JOIN Users u ON com.UserID = u.UserID
+JOIN Lessons l ON com.LessonID = l.LessonID
+ORDER BY com.CreatedAt DESC;
